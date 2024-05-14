@@ -1,6 +1,9 @@
-﻿﻿using NLog;
+﻿
+﻿using NLog;
 using System.Linq;
 using FinalProject.Model;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 // See https://aka.ms/new-console-template for more information
 string path = Directory.GetCurrentDirectory() + "\\nlog.config";
@@ -11,6 +14,7 @@ logger.Info("Program started");
 
 try
 {
+    var db = new NWContext();
     string choice;
     do
     {
@@ -19,7 +23,30 @@ try
         Console.WriteLine("\"q\" to quit");
         choice = Console.ReadLine();
         Console.Clear();
+        logger.Info($"Option {choice} selected");
+        if (choice == "1")
+        {
+            var query = db.Categories.OrderBy(p => p.CategoryName);
 
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"{query.Count()} records returned");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            foreach (var item in query)
+            {
+                Console.WriteLine($"{item.CategoryName} - {item.Description}");
+            }
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+        else if (choice == "2")
+        {
+            Category category = new Category();
+            Console.WriteLine("Enter Category Name:");
+            category.CategoryName = Console.ReadLine();
+            Console.WriteLine("Enter the Category Description:");
+            category.Description = Console.ReadLine();
+            // TODO: save category to db
+        }
+        Console.WriteLine();
     } while (choice.ToLower() != "q");
 }
 catch (Exception ex)
