@@ -1,35 +1,88 @@
 ﻿using NLog;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using FinalProject.Model;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using Microsoft.EntityFrameworkCore;
 
-// See https://aka.ms/new-console-template for more information
-string path = Directory.GetCurrentDirectory() + "\\nlog.config";
-
-// create instance of Logger
-var logger = LogManager.LoadConfiguration(path).GetCurrentClassLogger();
-logger.Info("Program started");
-
-try
+namespace FinalProject
 {
-    var db = new NWContext();
-    string choice;
-    do
+    class Program
     {
-        Console.WriteLine("1) Display Categories");
-        Console.WriteLine("2) Add Category");
-        Console.WriteLine("3) Edit Category");
-        Console.WriteLine("4) Display Category and related products");
-        Console.WriteLine("5) Display all Categories and their related products");
-        Console.WriteLine("\"q\" to quit");
-        choice = Console.ReadLine();
-        Console.Clear();
-        logger.Info($"Option {choice} selected");
-        if (choice == "1")
+        static void Main(string[] args)
+        {
+            string path = Directory.GetCurrentDirectory() + "\\nlog.config";
+
+            // create instance of Logger
+            var logger = LogManager.LoadConfiguration(path).GetCurrentClassLogger();
+            logger.Info("Program started");
+
+            try
+            {
+                var db = new NWContext();
+                string choice;
+                do
+                {
+                    Console.WriteLine("1) Display Categories");
+                    Console.WriteLine("2) Add Category");
+                    Console.WriteLine("3) Display Category and related products");
+                    Console.WriteLine("4) Display all Categories and their related products");
+                    Console.WriteLine("5) Add new record to Products table");
+                    Console.WriteLine("6) Edit a specified record from the Products table");
+                    Console.WriteLine("7) Display all records in the Products table (ProductName only)");
+                    Console.WriteLine("8) Display a specific Product");
+                    Console.WriteLine("\"q\" to quit");
+                    choice = Console.ReadLine();
+                    Console.Clear();
+                    logger.Info($"Option {choice} selected");
+
+                    if (choice == "1")
+                    {
+                        DisplayCategories(db, logger);
+                    }
+                    else if (choice == "2")
+                    {
+                        AddCategory(db, logger);
+                    }
+                    else if (choice == "3")
+                    {
+                        DisplayCategoryAndProducts(db, logger);
+                    }
+                    else if (choice == "4")
+                    {
+                        DisplayAllCategoriesAndProducts(db, logger);
+                    }
+                    else if (choice == "5")
+                    {
+                        AddProduct(db, logger);
+                    }
+                    else if (choice == "6")
+                    {
+                        EditProduct(db, logger);
+                    }
+                    else if (choice == "7")
+                    {
+                        DisplayAllProducts(db, logger);
+                    }
+                    else if (choice == "8")
+                    {
+                        DisplaySpecificProduct(db, logger);
+                    }
+
+                    Console.WriteLine();
+                } while (choice.ToLower() != "q");
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex.Message);
+            }
+
+            logger.Info("Program ended");
+        }
+
+        static void DisplayCategories(NWContext db, Logger logger)
         {
             var query = db.Categories.OrderBy(p => p.CategoryName);
 
@@ -42,7 +95,8 @@ try
             }
             Console.ForegroundColor = ConsoleColor.White;
         }
-        else if (choice == "2")
+
+        static void AddCategory(NWContext db, Logger logger)
         {
             Category category = new Category();
             Console.WriteLine("Enter Category Name:");
@@ -67,7 +121,7 @@ try
                     logger.Info("Validation passed");
                     db.Categories.Add(category);
                     db.SaveChanges();
-                    logger.Info("Category added successfully");
+                    logger.Info("Category added to database");
                 }
             }
             if (!isValid)
@@ -78,27 +132,8 @@ try
                 }
             }
         }
-        else if (choice == "3")
-        {
-            Console.WriteLine("Enter the ID of the category you want to edit:");
-            int id = int.Parse(Console.ReadLine());
-            var category = db.Categories.Find(id);
-            if (category != null)
-            {
-                Console.WriteLine($"Editing Category: {category.CategoryName}");
-                Console.WriteLine("Enter new Category Name:");
-                category.CategoryName = Console.ReadLine();
-                Console.WriteLine("Enter the new Category Description:");
-                category.Description = Console.ReadLine();
-                db.SaveChanges();
-                logger.Info("Category edited successfully");
-            }
-            else
-            {
-                logger.Error($"Category with ID {id} not found");
-            }
-        }
-        else if (choice == "4")
+
+        static void DisplayCategoryAndProducts(NWContext db, Logger logger)
         {
             var query = db.Categories.OrderBy(p => p.CategoryId);
 
@@ -113,20 +148,14 @@ try
             Console.Clear();
             logger.Info($"CategoryId {id} selected");
             Category category = db.Categories.Include("Products").FirstOrDefault(c => c.CategoryId == id);
-            if (category != null)
+            Console.WriteLine($"{category.CategoryName} - {category.Description}");
+            foreach (Product p in category.Products)
             {
-                Console.WriteLine($"{category.CategoryName} - {category.Description}");
-                foreach (Product p in category.Products)
-                {
-                    Console.WriteLine($"\t{p.ProductName}");
-                }
-            }
-            else
-            {
-                logger.Error($"Category with ID {id} not found");
+                Console.WriteLine($"\t{p.ProductName}");
             }
         }
-        else if (choice == "5")
+
+        static void DisplayAllCategoriesAndProducts(NWContext db, Logger logger)
         {
             var query = db.Categories.Include("Products").OrderBy(p => p.CategoryId);
             foreach (var item in query)
@@ -138,12 +167,115 @@ try
                 }
             }
         }
-        Console.WriteLine();
-    } while (choice.ToLower() != "q");
-}
-catch (Exception ex)
-{
-    logger.Error(ex.Message);
-}
 
-logger.Info("Program ended");
+        static void AddProduct(NWContext db, Logger logger)
+        {
+            Product product = new Product();
+            Console.WriteLine("Enter Product Name:");
+            product.ProductName = Console.ReadLine();
+            Console.WriteLine("Enter the Supplier ID:");
+            product.SupplierId = int.Parse(Console.ReadLine());
+            Console.WriteLine("Enter the Category ID:");
+            product.CategoryId = int.Parse(Console.ReadLine());
+            Console.WriteLine("Enter the Quantity Per Unit:");
+            product.QuantityPerUnit = Console.ReadLine();
+            Console.WriteLine("Enter the Unit Price:");
+            product.UnitPrice = decimal.Parse(Console.ReadLine());
+            Console.WriteLine("Enter the Units In Stock:");
+            product.UnitsInStock = short.Parse(Console.ReadLine());
+            Console.WriteLine("Enter the Units On Order:");
+            product.UnitsOnOrder = short.Parse(Console.ReadLine());
+            Console.WriteLine("Enter the Reorder Level:");
+            product.ReorderLevel = short.Parse(Console.ReadLine());
+            Console.WriteLine("Is the product discontinued? (true/false):");
+            product.Discontinued = bool.Parse(Console.ReadLine());
+
+            db.Products.Add(product);
+            db.SaveChanges();
+            logger.Info("Product added to database");
+        }
+
+        static void EditProduct(NWContext db, Logger logger)
+        {
+            Console.WriteLine("Enter the Product ID to edit:");
+            int id = int.Parse(Console.ReadLine());
+            var product = db.Products.Find(id);
+            if (product != null)
+            {
+                Console.WriteLine("Enter Product Name:");
+                product.ProductName = Console.ReadLine();
+                Console.WriteLine("Enter the Supplier ID:");
+                product.SupplierId = int.Parse(Console.ReadLine());
+                Console.WriteLine("Enter the Category ID:");
+                product.CategoryId = int.Parse(Console.ReadLine());
+                Console.WriteLine("Enter the Quantity Per Unit:");
+                product.QuantityPerUnit = Console.ReadLine();
+                Console.WriteLine("Enter the Unit Price:");
+                product.UnitPrice = decimal.Parse(Console.ReadLine());
+                Console.WriteLine("Enter the Units In Stock:");
+                product.UnitsInStock = short.Parse(Console.ReadLine());
+                Console.WriteLine("Enter the Units On Order:");
+                product.UnitsOnOrder = short.Parse(Console.ReadLine());
+                Console.WriteLine("Enter the Reorder Level:");
+                product.ReorderLevel = short.Parse(Console.ReadLine());
+                Console.WriteLine("Is the product discontinued? (true/false):");
+                product.Discontinued = bool.Parse(Console.ReadLine());
+
+                db.SaveChanges();
+                logger.Info($"Product with ID {id} updated");
+            }
+            else
+            {
+                Console.WriteLine("Product not found");
+                logger.Warn($"Product with ID {id} not found");
+            }
+        }
+
+        static void DisplayAllProducts(NWContext db, Logger logger)
+        {
+            Console.WriteLine("Do you want to see all products (A), discontinued products (D), or active products (not discontinued) (C)?");
+            char choice = char.Parse(Console.ReadLine().ToUpper());
+            var query = choice switch
+            {
+                'A' => db.Products.OrderBy(p => p.ProductName),
+                'D' => db.Products.Where(p => p.Discontinued).OrderBy(p => p.ProductName),
+                'C' => db.Products.Where(p => !p.Discontinued).OrderBy(p => p.ProductName),
+                _ => throw new ArgumentException("Invalid choice")
+            };
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine($"{query.Count()} records returned");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            foreach (var item in query)
+            {
+                Console.WriteLine($"{item.ProductName} - {(item.Discontinued ? "Discontinued" : "Active")}");
+            }
+            Console.ForegroundColor = ConsoleColor.White;
+        }
+
+        static void DisplaySpecificProduct(NWContext db, Logger logger)
+        {
+            Console.WriteLine("Enter the Product ID to display:");
+            int id = int.Parse(Console.ReadLine());
+            var product = db.Products.Find(id);
+            if (product != null)
+            {
+                Console.WriteLine($"Product ID: {product.ProductId}");
+                Console.WriteLine($"Product Name: {product.ProductName}");
+                Console.WriteLine($"Supplier ID: {product.SupplierId}");
+                Console.WriteLine($"Category ID: {product.CategoryId}");
+                Console.WriteLine($"Quantity Per Unit: {product.QuantityPerUnit}");
+                Console.WriteLine($"Unit Price: {product.UnitPrice}");
+                Console.WriteLine($"Units In Stock: {product.UnitsInStock}");
+                Console.WriteLine($"Units On Order: {product.UnitsOnOrder}");
+                Console.WriteLine($"Reorder Level: {product.ReorderLevel}");
+                Console.WriteLine($"Discontinued: {(product.Discontinued ? "Yes" : "No")}");
+            }
+            else
+            {
+                Console.WriteLine("Product not found");
+                logger.Warn($"Product with ID {id} not found");
+            }
+        }
+    }
+}
