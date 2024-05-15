@@ -33,6 +33,8 @@ namespace FinalProject
                     Console.WriteLine("6) Edit a specified record from the Products table");
                     Console.WriteLine("7) Display all records in the Products table (ProductName only)");
                     Console.WriteLine("8) Display a specific Product");
+                    Console.WriteLine("9) Delete a specified existing record from the Products table");
+                    Console.WriteLine("10) Delete a specified existing record from the Categories table");
                     Console.WriteLine("\"q\" to quit");
                     choice = Console.ReadLine();
                     Console.Clear();
@@ -69,6 +71,14 @@ namespace FinalProject
                     else if (choice == "8")
                     {
                         DisplaySpecificProduct(db, logger);
+                    }
+                    else if (choice == "9")
+                    {
+                        DeleteProduct(db, logger);
+                    }
+                    else if (choice == "10")
+                    {
+                        DeleteCategory(db, logger);
                     }
 
                     Console.WriteLine();
@@ -275,6 +285,49 @@ namespace FinalProject
             {
                 Console.WriteLine("Product not found");
                 logger.Warn($"Product with ID {id} not found");
+            }
+        }
+
+        static void DeleteProduct(NWContext db, Logger logger)
+        {
+            Console.WriteLine("Enter the Product ID to delete:");
+            int id = int.Parse(Console.ReadLine());
+            var product = db.Products.Find(id);
+            if (product != null)
+            {
+                db.Products.Remove(product);
+                db.SaveChanges();
+                logger.Info($"Product with ID {id} deleted");
+            }
+            else
+            {
+                Console.WriteLine("Product not found");
+                logger.Warn($"Product with ID {id} not found");
+            }
+        }
+
+        static void DeleteCategory(NWContext db, Logger logger)
+        {
+            Console.WriteLine("Enter the Category ID to delete:");
+            int id = int.Parse(Console.ReadLine());
+            var category = db.Categories.Find(id);
+            if (category != null)
+            {
+                // Remove all related products first
+                var products = db.Products.Where(p => p.CategoryId == id);
+                foreach (var product in products)
+                {
+                    db.Products.Remove(product);
+                }
+
+                db.Categories.Remove(category);
+                db.SaveChanges();
+                logger.Info($"Category with ID {id} deleted");
+            }
+            else
+            {
+                Console.WriteLine("Category not found");
+                logger.Warn($"Category with ID {id} not found");
             }
         }
     }
