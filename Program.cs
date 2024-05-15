@@ -35,6 +35,7 @@ namespace FinalProject
                     Console.WriteLine("8) Display a specific Product");
                     Console.WriteLine("9) Delete a specified existing record from the Products table");
                     Console.WriteLine("10) Delete a specified existing record from the Categories table");
+                    Console.WriteLine("11) Calculate the total value of all products in stock");
                     Console.WriteLine("\"q\" to quit");
                     choice = Console.ReadLine();
                     Console.Clear();
@@ -79,6 +80,10 @@ namespace FinalProject
                     else if (choice == "10")
                     {
                         DeleteCategory(db, logger);
+                    }
+                    else if (choice == "11")
+                    {
+                        CalculateTotalValueInStock(db, logger);
                     }
 
                     Console.WriteLine();
@@ -329,6 +334,13 @@ namespace FinalProject
                 Console.WriteLine("Category not found");
                 logger.Warn($"Category with ID {id} not found");
             }
+        }
+
+        static void CalculateTotalValueInStock(NWContext db, Logger logger)
+        {
+            decimal totalValue = db.Products.Sum(p => (decimal?)(p.UnitPrice * p.UnitsInStock)) ?? 0;
+            Console.WriteLine($"Total value of all products in stock: {totalValue:C}");
+            logger.Info($"Total value of all products in stock: {totalValue:C}");
         }
     }
 }
