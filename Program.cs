@@ -338,9 +338,12 @@ namespace FinalProject
 
         static void CalculateTotalValueInStock(NWContext db, Logger logger)
         {
-            decimal totalValue = db.Products.Sum(p => (decimal?)(p.UnitPrice * p.UnitsInStock)) ?? 0;
+            decimal totalValue = db.Products
+                                  .AsEnumerable()
+                                  .Sum(p => (p.UnitPrice ?? 0) * (p.UnitsInStock ?? 0));
             Console.WriteLine($"Total value of all products in stock: {totalValue:C}");
             logger.Info($"Total value of all products in stock: {totalValue:C}");
         }
+
     }
 }
