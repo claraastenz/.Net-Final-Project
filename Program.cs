@@ -187,7 +187,14 @@ namespace FinalProject
         {
             Product product = new Product();
             Console.WriteLine("Enter Product Name:");
-            product.ProductName = Console.ReadLine();
+            string productName = Console.ReadLine();
+            if (string.IsNullOrEmpty(productName))
+            {
+                Console.WriteLine("Product Name cannot be empty.");
+                logger.Error("Product Name cannot be empty.");
+                return;
+            }
+            product.ProductName = productName;
             Console.WriteLine("Enter the Supplier ID:");
             product.SupplierId = int.Parse(Console.ReadLine());
             Console.WriteLine("Enter the Category ID:");
