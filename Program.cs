@@ -115,7 +115,15 @@ namespace FinalProject
         {
             Category category = new Category();
             Console.WriteLine("Enter Category Name:");
-            category.CategoryName = Console.ReadLine();
+            string categoryName = Console.ReadLine().Trim();
+            if (string.IsNullOrEmpty(categoryName))
+            {
+                Console.WriteLine("Category Name cannot be empty.");
+                logger.Error("Category Name cannot be empty.");
+                return;
+            }
+            category.CategoryName = categoryName;
+
             Console.WriteLine("Enter the Category Description:");
             category.Description = Console.ReadLine();
             ValidationContext context = new ValidationContext(category, null, null);
@@ -147,6 +155,7 @@ namespace FinalProject
                 }
             }
         }
+
 
         static void DisplayCategoryAndProducts(NWContext db, Logger logger)
         {
